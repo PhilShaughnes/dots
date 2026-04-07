@@ -18,20 +18,20 @@ func cmdApply(cfg *Config, args []string) int {
 	}
 
 	statuses := collectStatuses(cfg, filter)
+
 	exit := 0
 
 	for _, s := range statuses {
+		var err error
 		switch s.kind {
 		case "file":
-			if err := applyDotfile(s); err != nil {
-				fmt.Fprintf(os.Stderr, "  error %s: %v\n", s.name, err)
-				exit = 1
-			}
+			err = applyDotfile(s)
 		case "repo":
-			if err := applyRepo(cfg, s); err != nil {
-				fmt.Fprintf(os.Stderr, "  error %s: %v\n", s.name, err)
-				exit = 1
-			}
+			err = applyRepo(s)
+		}
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "  error %s: %v\n", s.name, err)
+			exit = 1
 		}
 	}
 
@@ -52,7 +52,7 @@ func applyDotfile(s entryStatus) error {
 	case stateSrcMissing:
 		return fmt.Errorf("src %s does not exist", s.src)
 	case stateMissing:
-		if err := os.MkdirAll(filepath.Dir(s.dest), 0755); err != nil {
+		if err := os.MkdirAll(filepath.Dir(s.dest), 0o755); err != nil {
 			return err
 		}
 		fmt.Printf("  linking  %s → %s\n", s.src, s.dest)
@@ -61,7 +61,7 @@ func applyDotfile(s entryStatus) error {
 	return nil
 }
 
-func applyRepo(cfg *Config, s entryStatus) error {
+func applyRepo(s entryStatus) error {
 	switch s.state {
 	case stateCloned:
 		fmt.Printf("  ok       %s\n", s.name)
@@ -70,20 +70,14 @@ func applyRepo(cfg *Config, s entryStatus) error {
 		fmt.Printf("  conflict %s → %s (exists but not a repo, skipping)\n", s.name, s.dest)
 		return nil
 	case stateNotCloned:
-		// find url from cfg
-		for _, r := range cfg.Repos {
-			if r.Name == s.name {
-				dest := expandPath(r.Dest)
-				fmt.Printf("  cloning  %s → %s\n", r.URL, dest)
-				if err := os.MkdirAll(filepath.Dir(dest), 0755); err != nil {
-					return err
-				}
-				cmd := exec.Command("git", "clone", r.URL, dest)
-				cmd.Stdout = os.Stdout
-				cmd.Stderr = os.Stderr
-				return cmd.Run()
-			}
+		fmt.Printf("  cloning  %s → %s\n", s.url, s.dest)
+		if err := os.MkdirAll(filepath.Dir(s.dest), 0o755); err != nil {
+			return err
 		}
+		cmd := exec.Command("git", "clone", s.url, s.dest)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		return cmd.Run()
 	}
 	return nil
 }

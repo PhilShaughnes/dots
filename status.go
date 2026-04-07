@@ -43,7 +43,8 @@ type entryStatus struct {
 	name  string
 	kind  string // "file" or "repo"
 	state entryState
-	src   string // dotfiles only
+	src   string // dotfiles: local path in repo
+	url   string // repos: git remote URL
 	dest  string
 }
 
@@ -113,6 +114,7 @@ func collectStatuses(cfg *Config, filter map[string]bool) []entryStatus {
 			name:  r.Name,
 			kind:  "repo",
 			state: repoState(dest),
+			url:   r.URL,
 			dest:  dest,
 		})
 	}
@@ -121,7 +123,7 @@ func collectStatuses(cfg *Config, filter map[string]bool) []entryStatus {
 }
 
 func dotfileState(src, dest string) entryState {
-	if _, err := os.Stat(src); os.IsNotExist(err) {
+	if _, err := os.Stat(src); err != nil {
 		return stateSrcMissing
 	}
 	info, err := os.Lstat(dest)
