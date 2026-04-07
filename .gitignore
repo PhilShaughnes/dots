@@ -19,3 +19,7 @@
 
 # Go workspace file
 go.work
+
+# project
+dots
+dots.linux
