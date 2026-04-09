@@ -8,76 +8,90 @@ import (
 	"path/filepath"
 )
 
-func cmdApply(cfg *Config, args []string) int {
+func cmdApply(args []string) int {
 	fs := flag.NewFlagSet("apply", flag.ExitOnError)
+	var o opts
+	registerFlags(fs, &o)
 	fs.Parse(args)
 
-	filter := map[string]bool{}
-	for _, a := range fs.Args() {
-		filter[a] = true
+	if o.file == "" {
+		fmt.Fprintln(os.Stderr, "error: -f required")
+		fs.Usage()
+		return 1
 	}
 
-	statuses := collectStatuses(cfg, filter)
+	cfg, err := loadConfig(o.file)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error loading config: %v\n", err)
+		return 1
+	}
 
+	names := collectNames(o.names)
 	exit := 0
-
-	for _, s := range statuses {
+	for _, s := range collectStatuses(cfg, names) {
+		if !matchType(s, o.types) || !matchState(s.state, o.states) {
+			continue
+		}
+		var newState entryState
 		var err error
 		switch s.kind {
-		case "file":
-			err = applyDotfile(s)
+		case "dotfile":
+			newState, err = applyDotfile(s)
 		case "repo":
-			err = applyRepo(s)
+			newState, err = applyRepo(s)
+		default:
+			continue
 		}
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "  error %s: %v\n", s.name, err)
+			fmt.Fprintf(os.Stderr, "error %s: %v\n", s.name, err)
 			exit = 1
+			continue
 		}
+		s.state = newState
+		outputEntry(s, o.fields)
 	}
-
 	return exit
 }
 
-func applyDotfile(s entryStatus) error {
+// applyDotfile creates a symlink for the entry if needed.
+// Returns the resulting state and any error.
+func applyDotfile(s entryStatus) (entryState, error) {
 	switch s.state {
 	case stateOK:
-		fmt.Printf("  ok       %s\n", s.name)
-		return nil
-	case stateConflict:
-		fmt.Printf("  conflict %s → %s (real file exists, skipping)\n", s.name, s.dest)
-		return nil
-	case stateWrongTarget:
-		fmt.Printf("  conflict %s → %s (symlink points elsewhere, skipping)\n", s.name, s.dest)
-		return nil
-	case stateSrcMissing:
-		return fmt.Errorf("src %s does not exist", s.src)
-	case stateMissing:
+		return stateOK, nil
+	case stateBlocked, stateSrcMissing:
+		return s.state, nil
+	case stateEmpty:
 		if err := os.MkdirAll(filepath.Dir(s.dest), 0o755); err != nil {
-			return err
+			return stateBlocked, err
 		}
-		fmt.Printf("  linking  %s → %s\n", s.src, s.dest)
-		return os.Symlink(s.src, s.dest)
+		if err := os.Symlink(s.src, s.dest); err != nil {
+			return stateBlocked, err
+		}
+		return stateChanged, nil
 	}
-	return nil
+	return stateOK, nil
 }
 
-func applyRepo(s entryStatus) error {
+// applyRepo clones the repo if not already present.
+// Returns the resulting state and any error.
+func applyRepo(s entryStatus) (entryState, error) {
 	switch s.state {
-	case stateCloned:
-		fmt.Printf("  ok       %s\n", s.name)
-		return nil
-	case stateConflict:
-		fmt.Printf("  conflict %s → %s (exists but not a repo, skipping)\n", s.name, s.dest)
-		return nil
-	case stateNotCloned:
-		fmt.Printf("  cloning  %s → %s\n", s.url, s.dest)
+	case stateOK:
+		return stateOK, nil
+	case stateBlocked:
+		return stateBlocked, nil
+	case stateEmpty:
 		if err := os.MkdirAll(filepath.Dir(s.dest), 0o755); err != nil {
-			return err
+			return stateBlocked, err
 		}
 		cmd := exec.Command("git", "clone", s.url, s.dest)
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
-		return cmd.Run()
+		if err := cmd.Run(); err != nil {
+			return stateBlocked, err
+		}
+		return stateChanged, nil
 	}
-	return nil
+	return stateOK, nil
 }

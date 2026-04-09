@@ -1,50 +1,40 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"os"
 )
 
 func main() {
-	file := flag.String("f", "", "config file (required)")
-	flag.Usage = func() {
-		fmt.Fprintln(os.Stderr, "usage: dots -f machine.toml <command> [options]")
-		fmt.Fprintln(os.Stderr, "")
-		fmt.Fprintln(os.Stderr, "commands:")
-		fmt.Fprintln(os.Stderr, "  status   show state of all entries")
-		fmt.Fprintln(os.Stderr, "  apply    create symlinks and clone repos")
-		fmt.Fprintln(os.Stderr, "")
-		fmt.Fprintln(os.Stderr, "flags:")
-		flag.PrintDefaults()
-	}
-	flag.Parse()
-
-	if *file == "" {
-		flag.Usage()
+	if len(os.Args) < 2 {
+		printUsage()
 		os.Exit(1)
 	}
-
-	cfg, err := loadConfig(*file)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "error loading config: %v\n", err)
-		os.Exit(1)
-	}
-
-	args := flag.Args()
-	if len(args) == 0 {
-		flag.Usage()
-		os.Exit(1)
-	}
-
-	switch args[0] {
-	case "status":
-		os.Exit(cmdStatus(cfg, args[1:]))
+	switch os.Args[1] {
+	case "list":
+		os.Exit(cmdList(os.Args[2:]))
 	case "apply":
-		os.Exit(cmdApply(cfg, args[1:]))
+		os.Exit(cmdApply(os.Args[2:]))
 	default:
-		fmt.Fprintf(os.Stderr, "unknown command: %s\n", args[0])
-		flag.Usage()
+		fmt.Fprintf(os.Stderr, "unknown command: %s\n", os.Args[1])
+		printUsage()
 		os.Exit(1)
 	}
+}
+
+func printUsage() {
+	fmt.Fprintln(os.Stderr, "usage: dots <command> [flags] [names...]")
+	fmt.Fprintln(os.Stderr, "")
+	fmt.Fprintln(os.Stderr, "commands:")
+	fmt.Fprintln(os.Stderr, "  list    show entry states")
+	fmt.Fprintln(os.Stderr, "  apply   create symlinks and clone repos")
+	fmt.Fprintln(os.Stderr, "")
+	fmt.Fprintln(os.Stderr, "flags:")
+	fmt.Fprintln(os.Stderr, "  -f file    config file (required)")
+	fmt.Fprintln(os.Stderr, "  -t type    filter by type: dotfile, repo (repeatable)")
+	fmt.Fprintln(os.Stderr, "  -s state   filter by state: ok, empty, blocked, src-missing (repeatable, supports !)")
+	fmt.Fprintln(os.Stderr, "  -n name    filter by name (repeatable)")
+	fmt.Fprintln(os.Stderr, "  -o fields  output fields: name,kind,state,src,url,dest (comma-separated)")
+	fmt.Fprintln(os.Stderr, "")
+	fmt.Fprintln(os.Stderr, "stdin is read as names when piped")
 }

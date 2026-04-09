@@ -14,7 +14,7 @@ echo "[user]"         > "$DIR/repo/.config/jj/config.toml"
 # fake home
 mkdir -p "$DIR/home"
 
-# pre-existing real file — should show as conflict
+# pre-existing real file — should show as blocked
 echo "# existing"     > "$DIR/home/.aliases"
 
 cat > "$DIR/machine.toml" <<TOML
@@ -34,21 +34,29 @@ src  = "$DIR/repo/.config/jj/config.toml"
 dest = "$DIR/home/.config/jj/config.toml"
 TOML
 
-echo "=== status (before) ==="
-"$DOTS" -f "$DIR/machine.toml" status || true
+echo "=== list (before) ==="
+"$DOTS" list -f "$DIR/machine.toml" || true
 
 echo ""
 echo "=== apply ==="
-"$DOTS" -f "$DIR/machine.toml" apply
+"$DOTS" apply -f "$DIR/machine.toml"
 
 echo ""
-echo "=== status (after) ==="
-"$DOTS" -f "$DIR/machine.toml" status || true
+echo "=== list (after) ==="
+"$DOTS" list -f "$DIR/machine.toml" || true
 
 echo ""
-echo "=== --conflicts ==="
-"$DOTS" -f "$DIR/machine.toml" status --conflicts
+echo "=== -s blocked -o dest ==="
+"$DOTS" list -f "$DIR/machine.toml" -s blocked -o dest || true
 
 echo ""
-echo "=== --name-only ==="
-"$DOTS" -f "$DIR/machine.toml" status --name-only
+echo "=== -o name ==="
+"$DOTS" list -f "$DIR/machine.toml" -o name || true
+
+echo ""
+echo "=== -s '!ok' ==="
+"$DOTS" list -f "$DIR/machine.toml" -s '!ok' || true
+
+echo ""
+echo "=== pipe names to apply ==="
+"$DOTS" list -f "$DIR/machine.toml" -s empty -o name | "$DOTS" apply -f "$DIR/machine.toml" || true
