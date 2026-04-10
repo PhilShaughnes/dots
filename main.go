@@ -1,13 +1,17 @@
 package main
 
 import (
+	_ "embed"
 	"fmt"
 	"os"
 )
 
+//go:embed help.txt
+var helpText string
+
 func main() {
 	if len(os.Args) < 2 {
-		printUsage()
+		printBrief()
 		os.Exit(1)
 	}
 	switch os.Args[1] {
@@ -15,26 +19,33 @@ func main() {
 		os.Exit(cmdList(os.Args[2:]))
 	case "apply":
 		os.Exit(cmdApply(os.Args[2:]))
+	case "help":
+		fmt.Print(helpText)
+		os.Exit(0)
+	case "-h", "--help":
+		printBrief()
+		os.Exit(0)
 	default:
 		fmt.Fprintf(os.Stderr, "unknown command: %s\n", os.Args[1])
-		printUsage()
+		fmt.Fprintln(os.Stderr, "run 'dots help' for usage")
 		os.Exit(1)
 	}
 }
 
-func printUsage() {
-	fmt.Fprintln(os.Stderr, "usage: dots <command> [flags] [names...]")
-	fmt.Fprintln(os.Stderr, "")
-	fmt.Fprintln(os.Stderr, "commands:")
-	fmt.Fprintln(os.Stderr, "  list    show entry states")
-	fmt.Fprintln(os.Stderr, "  apply   create symlinks and clone repos")
-	fmt.Fprintln(os.Stderr, "")
-	fmt.Fprintln(os.Stderr, "flags:")
-	fmt.Fprintln(os.Stderr, "  -f file    config file (required)")
-	fmt.Fprintln(os.Stderr, "  -t type    filter by type: dotfile, repo (repeatable)")
-	fmt.Fprintln(os.Stderr, "  -s state   filter by state: ok, empty, blocked, src-missing (repeatable, supports !)")
-	fmt.Fprintln(os.Stderr, "  -n name    filter by name (repeatable)")
-	fmt.Fprintln(os.Stderr, "  -o fields  output fields: name,kind,state,src,url,dest (comma-separated)")
-	fmt.Fprintln(os.Stderr, "")
-	fmt.Fprintln(os.Stderr, "stdin is read as names when piped")
+func printBrief() {
+	fmt.Println("Dots is a minimalist dotfile manager that is simple, orthogonal, and composable.")
+	fmt.Println()
+	fmt.Println("usage: dots <command> -f file [flags]")
+	fmt.Println()
+	fmt.Println("commands:")
+	fmt.Println("  list    show current state of all entries")
+	fmt.Println("  apply   create symlinks and clone repos")
+	fmt.Println("  help    show full documentation")
+	fmt.Println()
+	fmt.Println("flags:")
+	fmt.Println("  -f file    config file (required)")
+	fmt.Println("  -t type    filter by type: dotfile, repo (repeatable)")
+	fmt.Println("  -s state   filter by state: ok, empty, blocked, src-missing (repeatable, supports !)")
+	fmt.Println("  -n name    filter by name (repeatable)")
+	fmt.Println("  -o fields  output fields: name,kind,state,src,url,dest (comma-separated)")
 }

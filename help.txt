@@ -1,0 +1,92 @@
+dots — declarative dotfile and repo manager
+
+ABOUT
+
+  Dots is a minimalist dotfile manager that is simple, orthogonal, and
+  composable.
+
+  The two primitives are symlinks and repos. A dotfile entry creates a
+  symlink from anywhere to anywhere. A repo entry clones a git repo to
+  a specified location. That's it.
+
+  Configuration lives in a TOML file you put wherever you want. You can
+  have one file per machine, one shared file, or compose them however
+  makes sense — just point dots at whichever file applies.
+
+
+CONFIG
+
+  [[dotfiles]]
+  name = "zshrc"
+  src  = "~/dotfiles/.zshrc"   # source in your dotfiles repo
+  dest = "~/.zshrc"            # where the symlink is created
+
+  [[repos]]
+  name = "nvim"
+  url  = "git@github.com:you/nvim.git"
+  dest = "~/.config/nvim"
+
+  src and dest accept ~ and absolute paths. Names must be unique within
+  a config file. Run multiple config files to compose across machines:
+
+    dots list -f base.toml
+    dots list -f base.toml && dots list -f work.toml
+
+COMMANDS
+
+  dots list  -f file [flags]   show current state of all entries
+  dots apply -f file [flags]   create symlinks and clone repos
+
+FLAGS
+
+  -f file    config file (required)
+  -t type    filter by type: dotfile, repo
+  -s state   filter by state: ok, empty, blocked, src-missing
+             supports negation: -s '!ok'
+             repeatable:        -s empty -s blocked
+  -n name    filter by name (repeatable)
+  -o fields  output fields, comma-separated
+             available: name, kind, state, src, url, dest
+             default:   name, kind, state, dest
+
+STATES
+
+  ok          correct — symlink points to src, or repo is present
+  ok*         just fixed by this apply run
+  empty       nothing at dest — safe to apply
+  blocked     dest exists but is wrong — needs manual intervention
+              (could be a real file, wrong symlink, or non-repo dir)
+  src-missing source path does not exist in your dotfiles repo
+
+  apply skips blocked and src-missing entries without error.
+  list exits non-zero if any entry is not ok.
+
+STDIN
+
+  Names piped to stdin are used as a name filter, one per line.
+  This enables interactive selection:
+
+    dots list -f m.toml -o name | fzf --multi | dots apply -f m.toml
+
+EXAMPLES
+
+  Show all entries:
+    dots list -f machine.toml
+
+  Show only problems:
+    dots list -f machine.toml -s '!ok'
+
+  Apply everything that is safe (empty):
+    dots apply -f machine.toml -s empty
+
+  Apply only repos:
+    dots apply -f machine.toml -t repo
+
+  Show blocked entries with their dest paths:
+    dots list -f machine.toml -s blocked -o name,dest
+
+  Interactively choose what to apply:
+    dots list -f machine.toml -o name | fzf --multi | dots apply -f machine.toml
+
+  Check state after applying:
+    dots apply -f machine.toml && dots list -f machine.toml -s '!ok'

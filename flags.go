@@ -31,13 +31,14 @@ type opts struct {
 	fields multiFlag
 }
 
-// registerFlags registers all common flags onto fs.
+// registerFlags registers all common flags onto fs and sets a usage header.
 func registerFlags(fs *flag.FlagSet, o *opts) {
 	fs.StringVar(&o.file, "f", "", "config file (required)")
 	fs.Var(&o.types, "t", "filter by type: dotfile, repo (repeatable)")
 	fs.Var(&o.states, "s", "filter by state: ok, empty, blocked, src-missing (repeatable, supports !)")
 	fs.Var(&o.names, "n", "filter by name (repeatable)")
 	fs.Var(&o.fields, "o", "output fields: name,kind,state,src,url,dest (comma-separated)")
+	fs.Usage = func() { printBrief() }
 }
 
 // collectNames merges -n flag values and stdin into a name set.
