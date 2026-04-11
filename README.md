@@ -1,42 +1,208 @@
-# Dotfiles
+# dots
 
-Ohi! Welcome to Dots! It's for dotfiles.
+Ohi! Welcome to dots — a dotfile manager.
 
-Dotfiles are awesome. They're where you write yourself cheatsheets, tune things just so, hack, explore, play. They make your system yours.
+Dotfiles make your system yours. They're where you write yourself cheatsheets,
+tune things just so, hack, explore, play, express yourself.
 
-They also need a way to be backed up, hacked on, moved around, and kept track of. This is my take on that.
+They also need to be backed up, hacked on, moved around, and kept track of.
+This is my take on that.
+
+Most dotfile managers assume you want the same thing everywhere, with templates
+handling the differences. That never fit how I actually work.
+
+**A few principles I wanted:**
+
+1. **Simple** — clear and understandable, no magic, no hidden conventions. Less is more.
+2. **Trackable** — a declarative manifest of what dotfiles you have and where they live. Dotfiles are scattered — that's fine. Keep a list.
+3. **Hackable** — open a file, edit it. Use git, diff, your editor, whatever you already use. No special workflow required.
+4. **Flexible** — no opinions on where files are stored, where the manifest lives, or where things are going. Files or whole git repos — dots handles both.
+5. **Composable** — one manifest per machine, or a base plus layers. Mix however makes sense for your setup.
+6. **Safe** — don't break things. Make it clear what is and what should be, then let you handle it.
 
 ---
 
-Most dotfile tools assume you want the same thing everywhere. Differences are edge cases, solved with templates. But templates break the vcs workflow I actually want — edit, diff, commit, sync — and they don't handle machines that genuinely differ. Sometimes I want the same file in different locations. Sometimes different files in the same location.
+## Install
 
-The answer turned out to be a simple list. *Here's the thing, here's where it lives.* A small Go CLI, a TOML manifest, no conventions about directory structure, no magic. Declare it, read it, apply it.
+```sh
+go install github.com/philshaughnes/dots@latest
+```
+
+Or build from source:
+
+```sh
+git clone https://github.com/philshaughnes/dots
+cd dots
+go build -o dots .
+```
 
 ---
 
-## What dots provides
+## Quick start
 
-1. **A declarative manifest** — a TOML file listing:
-   - dotfiles (`src → dest`)
-   - git repos (`url → dest`)
+Create a manifest:
 
-2. **Validation / state tracking** — it knows if:
-   - `ok` → symlink or repo is correct
-   - `empty` → dest missing
-   - `blocked` → dest exists but conflicts
-   - `src-missing` → source missing
+```toml
+# machine.toml
 
-3. **Safe application** — applies symlinks or clones repos without overwriting blocked destinations
+[[dotfiles]]
+name = "zshrc"
+src  = "~/dotfiles/.zshrc"
+dest = "~/.zshrc"
 
-4. **Filtering / listing** — query subsets by type, state, or name and pipe them to shell commands
+[[dotfiles]]
+name = "jj"
+src  = "~/dotfiles/.config/jj/config.toml"
+dest = "~/.config/jj/config.toml"
 
-Everything else is left to you — git, scripts, hooks, orchestration.
+[[repos]]
+name = "nvim"
+url  = "git@github.com:you/nvim.git"
+dest = "~/.config/nvim"
+```
+
+Check the current state:
+
+```sh
+dots list -f machine.toml
+```
+
+```
+zshrc    dotfile  empty    /home/you/.zshrc
+jj       dotfile  empty    /home/you/.config/jj/config.toml
+nvim     repo     empty    /home/you/.config/nvim
+```
+
+Apply it:
+
+```sh
+dots apply -f machine.toml
+```
+
+```
+zshrc    dotfile  ok*      /home/you/.zshrc
+jj       dotfile  ok*      /home/you/.config/jj/config.toml
+nvim     repo     ok*      /home/you/.config/nvim
+```
+
+---
+
+## Config
+
+A manifest is a TOML file with `[[dotfiles]]` and `[[repos]]` sections.
+Put it wherever makes sense — your dotfiles repo, `~/.config/dots/`, anywhere.
+
+```toml
+[[dotfiles]]
+name = "zshrc"               # unique name, used for filtering
+src  = "~/dotfiles/.zshrc"   # source path in your dotfiles repo
+dest = "~/.zshrc"            # where the symlink is created
+
+[[repos]]
+name = "nvim"
+url  = "git@github.com:you/nvim.git"   # git remote
+dest = "~/.config/nvim"                # where to clone
+```
+
+Both `src` and `dest` accept `~` and absolute paths. Names must be unique
+across all manifests used together.
+
+**Composing manifests:**
+
+```sh
+dots list  -f base.toml -f work.toml -f projects.toml
+dots apply -f base.toml -f coding.toml
+```
+
+---
+
+## Commands
+
+```
+dots list  -f file [flags]   show current state of all entries
+dots apply -f file [flags]   create symlinks and clone repos
+dots help                    show full documentation
+```
+
+**States:**
+
+| State | Meaning |
+|---|---|
+| `ok` | symlink correct or repo present |
+| `ok*` | just fixed by this apply run |
+| `empty` | nothing at dest — safe to apply |
+| `blocked` | dest exists but wrong — needs manual intervention |
+| `src-missing` | source path missing from dotfiles repo |
+
+`apply` skips `blocked` and `src-missing` entries without error.
+`list` exits non-zero if any entry is not `ok`.
+
+**Flags:**
+
+```
+-f file    config file, repeatable
+-t type    filter by type: dotfile, repo
+-s state   filter by state (supports !): -s empty, -s '!ok'
+-n name    filter by name
+-o fields  output fields: name,kind,state,src,url,dest
+```
+
+Run `dots help` or `dots -h` for full flag reference.
+
+---
+
+## Examples
+
+**Show only problems:**
+```sh
+dots list -f machine.toml -s '!ok'
+```
+
+**Apply only what's safe:**
+```sh
+dots apply -f machine.toml -s empty
+```
+
+**Apply only repos:**
+```sh
+dots apply -f machine.toml -t repo
+```
+
+**Show blocked entries with their paths:**
+```sh
+dots list -f machine.toml -s blocked -o name,dest
+```
+
+**Interactively choose what to apply:**
+```sh
+dots list -f machine.toml -o name | fzf --multi | dots apply -f machine.toml
+```
+
+**Check all repos for uncommitted changes:**
+```sh
+dots list -f machine.toml -t repo -o dest | while read -r repo; do
+  echo "== $repo =="
+  git -C "$repo" status --short
+done
+```
+
+**Auto-pull all repos:**
+```sh
+dots list -f machine.toml -t repo -s ok -o dest | while read -r repo; do
+  git -C "$repo" pull --rebase
+done
+```
+
+**Check state after applying:**
+```sh
+dots apply -f machine.toml && dots list -f machine.toml -s '!ok'
+```
 
 ---
 
 ## How it compares
 
-| Tool | Strengths | Weaknesses vs Dots |
+| Tool | Strengths | Weaknesses vs dots |
 |---|---|---|
 | **chezmoi** | Templating, host-aware configs, secret encryption, reconciliation | Implicit path conventions, complex add/edit workflow, opinionated templating layer |
 | **GNU Stow** | Pure symlink manager, handles directories elegantly | No declarative manifest, directory-structure-only, harder to filter or compose per-machine |
@@ -44,57 +210,6 @@ Everything else is left to you — git, scripts, hooks, orchestration.
 | **Homesick / vcsh / yadm** | Git-centric, some host awareness | Opinionated repo layout, less granular filtering, less shell-composable |
 | **Nix Home Manager** | Full declarative system, clean per-machine handling | Heavyweight, requires learning Nix, breaks filesystem-first intuition |
 
-**What makes dots different:**
-- Flat declarative manifest — one file per machine, or multiple composed. No templating, no assumed directory structure
-- Intentionally minimal — git, shell, CI do their own work
-- Queryable — ask "which repos are blocked?" and pipe the answer anywhere
-- Safe reconciliation — no blind overwriting
-- No path conventions — any layout, any machine
-
 ---
 
-## But can dots do...?
-
-Dots is minimal and orthogonal by design. That usually means the answer is *yes, with a simple shell pipe.*
-
-**Let me show you:**
-
-
-**Check all repos for uncommitted changes:**
-```sh
-dots list -f base.toml -t repo -o dest | while read -r repo; do
-  echo "== $repo =="
-  git -C "$repo" status --short
-done
-```
-
-**Warn on dirty repos:**
-```sh
-dots list -f work.toml -t repo -o dest |
-while read -r repo; do
-  git -C "$repo" diff --quiet || echo "dirty: $repo"
-done
-```
-
-**Auto-pull all repos:**
-```sh
-dots list -f base.toml -t repo -o dest |
-while read -r repo; do
-  git -C "$repo" pull --rebase
-done
-```
-
-**Fetch only repos that are already `ok`:**
-```sh
-dots list -f machine.toml -t repo -s ok -o dest |
-while read -r repo; do
-  git -C "$repo" fetch --quiet
-done
-```
-
-The filtering + shell pipeline pattern is intentionally the primitive. If you can express it as a query on your manifest, you can script it.
-
----
-
-Dots sets things up and helps you see what's what. The rest is your toolchain doing what it's good at. Have fun!
-
+Dots sets things up and helps you see what's what. The rest is your toolchain.
