@@ -76,9 +76,6 @@ EXAMPLES
   Show only problems:
     dots list -f machine.toml -s '!ok'
 
-  Apply everything that is safe (empty):
-    dots apply -f machine.toml -s empty
-
   Apply only repos:
     dots apply -f machine.toml -t repo
 
@@ -88,5 +85,11 @@ EXAMPLES
   Interactively choose what to apply:
     dots list -f machine.toml -o name | fzf --multi | dots apply -f machine.toml
 
-  Check state after applying:
-    dots apply -f machine.toml && dots list -f machine.toml -s '!ok'
+  Migrate existing dotfiles into your repo, then apply:
+    dots list -f machine.toml -t dotfile -s blocked -o src,dest \
+      | while IFS=$'\t' read -r src dest; do mv "$dest" "$src"; done
+    dots apply -f machine.toml
+
+  Check all repos for uncommitted changes:
+    dots list -f machine.toml -t repo -o dest \
+      | while read -r repo; do git -C "$repo" status --short; done

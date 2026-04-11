@@ -1,15 +1,18 @@
-# dots
+# Dots - The Simple Dotfile Manager
 
-Ohi! Welcome to dots — a dotfile manager.
+Ohi! Welcome to Dots!  
+It's for dotfiles.
 
-Dotfiles make your system yours. They're where you write yourself cheatsheets,
-tune things just so, hack, explore, play, express yourself.
+Dotfiles are awesome.  
+They're where you write yourself cheatsheets,  
+tune things just so, hack, explore, play.  
+They make your system yours.
 
-They also need to be backed up, hacked on, moved around, and kept track of.
-This is my take on that.
+They also need a way to be backed up, hacked on, moved around, and kept track of.
 
-Most dotfile managers assume you want the same thing everywhere, with templates
-handling the differences. That never fit how I actually work.
+_This is my take on that._
+
+---
 
 **A few principles I wanted:**
 
@@ -19,6 +22,26 @@ handling the differences. That never fit how I actually work.
 4. **Flexible** — no opinions on where files are stored, where the manifest lives, or where things are going. Files or whole git repos — dots handles both.
 5. **Composable** — one manifest per machine, or a base plus layers. Mix however makes sense for your setup.
 6. **Safe** — don't break things. Make it clear what is and what should be, then let you handle it.
+
+---
+
+## What dots provides
+
+1. **A declarative manifest** — a TOML file listing:
+   - dotfiles (`src → dest`)
+   - git repos (`url → dest`)
+
+2. **Validation / state tracking** — it knows if:
+   - `ok` → symlink or repo is correct
+   - `empty` → dest missing
+   - `blocked` → dest exists but conflicts
+   - `src-missing` → source missing
+
+3. **Safe application** — applies symlinks or clones repos without overwriting blocked destinations
+
+4. **Filtering / listing** — query subsets by type, state, or name and pipe them to shell commands
+
+Everything else is left to you — git, scripts, hooks, orchestration.
 
 ---
 
@@ -40,7 +63,7 @@ go build -o dots .
 
 ## Quick start
 
-Create a manifest:
+Create a manifest (doesn't matter where!):
 
 ```toml
 # machine.toml
@@ -67,11 +90,24 @@ Check the current state:
 dots list -f machine.toml
 ```
 
+If your dotfiles already exist at the dest locations, you'll see them as `blocked`:
+
+```
+zshrc    dotfile  blocked  /home/you/.zshrc
+jj       dotfile  blocked  /home/you/.config/jj/config.toml
+nvim     repo     empty    /home/you/.config/nvim
+```
+
+That's because the files are already there — dots won't overwrite them. Move them
+to the src locations first, then list again:
+
 ```
 zshrc    dotfile  empty    /home/you/.zshrc
 jj       dotfile  empty    /home/you/.config/jj/config.toml
 nvim     repo     empty    /home/you/.config/nvim
 ```
+
+See the [examples](#but-can-it-do) section for a script to move blocked files automatically.
 
 Apply it:
 
@@ -147,30 +183,28 @@ dots help                    show full documentation
 -o fields  output fields: name,kind,state,src,url,dest
 ```
 
+Names piped to stdin are used as a name filter, one per line:
+
+```sh
+dots list -f machine.toml -o name | fzf --multi | dots apply -f machine.toml
+```
+
 Run `dots help` or `dots -h` for full flag reference.
 
 ---
 
-## Examples
+## But can it do...?
 
-**Show only problems:**
-```sh
-dots list -f machine.toml -s '!ok'
-```
+Dots is minimal and orthogonal by design. That usually means the answer is *yes, with a simple shell pipe.*
+Let me show you:
 
-**Apply only what's safe:**
-```sh
-dots apply -f machine.toml -s empty
-```
 
-**Apply only repos:**
+**Migrate existing dotfiles into your repo, then apply:**
 ```sh
-dots apply -f machine.toml -t repo
-```
-
-**Show blocked entries with their paths:**
-```sh
-dots list -f machine.toml -s blocked -o name,dest
+dots list -f machine.toml -t dotfile -s blocked -o src,dest | while IFS=$'\t' read -r src dest; do
+  mv "$dest" "$src"
+done
+dots apply -f machine.toml
 ```
 
 **Interactively choose what to apply:**
@@ -186,30 +220,9 @@ dots list -f machine.toml -t repo -o dest | while read -r repo; do
 done
 ```
 
-**Auto-pull all repos:**
-```sh
-dots list -f machine.toml -t repo -s ok -o dest | while read -r repo; do
-  git -C "$repo" pull --rebase
-done
-```
-
-**Check state after applying:**
-```sh
-dots apply -f machine.toml && dots list -f machine.toml -s '!ok'
-```
+The filtering + shell pipeline pattern is intentionally the primitive. If you can express it as a query on your manifest, you can script it.
 
 ---
 
-## How it compares
+Dots sets things up and helps you see what's what. The rest is your toolchain doing what it's good at. Have fun!
 
-| Tool | Strengths | Weaknesses vs dots |
-|---|---|---|
-| **chezmoi** | Templating, host-aware configs, secret encryption, reconciliation | Implicit path conventions, complex add/edit workflow, opinionated templating layer |
-| **GNU Stow** | Pure symlink manager, handles directories elegantly | No declarative manifest, directory-structure-only, harder to filter or compose per-machine |
-| **Bare scripts + git** | Maximal flexibility | No declarative overview, you handle errors, filtering, and blocked states yourself |
-| **Homesick / vcsh / yadm** | Git-centric, some host awareness | Opinionated repo layout, less granular filtering, less shell-composable |
-| **Nix Home Manager** | Full declarative system, clean per-machine handling | Heavyweight, requires learning Nix, breaks filesystem-first intuition |
-
----
-
-Dots sets things up and helps you see what's what. The rest is your toolchain.
