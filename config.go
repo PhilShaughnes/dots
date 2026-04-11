@@ -26,15 +26,20 @@ type RepoEntry struct {
 	Dest string `toml:"dest"`
 }
 
-func loadConfig(path string) (*Config, error) {
-	var cfg Config
-	if _, err := toml.DecodeFile(expandPath(path), &cfg); err != nil {
+func loadConfigs(paths []string) (*Config, error) {
+	var merged Config
+	for _, p := range paths {
+		var cfg Config
+		if _, err := toml.DecodeFile(expandPath(p), &cfg); err != nil {
+			return nil, fmt.Errorf("%s: %w", p, err)
+		}
+		merged.Dotfiles = append(merged.Dotfiles, cfg.Dotfiles...)
+		merged.Repos = append(merged.Repos, cfg.Repos...)
+	}
+	if err := validateConfig(&merged); err != nil {
 		return nil, err
 	}
-	if err := validateConfig(&cfg); err != nil {
-		return nil, err
-	}
-	return &cfg, nil
+	return &merged, nil
 }
 
 func validateConfig(cfg *Config) error {

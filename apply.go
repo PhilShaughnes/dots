@@ -14,13 +14,13 @@ func cmdApply(args []string) int {
 	registerFlags(fs, &o)
 	fs.Parse(args)
 
-	if o.file == "" {
+	if len(o.files) == 0 {
 		fmt.Fprintln(os.Stderr, "error: -f required")
 		fs.Usage()
 		return 1
 	}
 
-	cfg, err := loadConfig(o.file)
+	cfg, err := loadConfigs(o.files)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error loading config: %v\n", err)
 		return 1

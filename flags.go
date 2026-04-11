@@ -24,7 +24,7 @@ func (m *multiFlag) Set(v string) error {
 
 // opts holds the parsed flags common to all commands.
 type opts struct {
-	file   string
+	files  multiFlag
 	types  multiFlag
 	states multiFlag
 	names  multiFlag
@@ -33,7 +33,7 @@ type opts struct {
 
 // registerFlags registers all common flags onto fs and sets a usage header.
 func registerFlags(fs *flag.FlagSet, o *opts) {
-	fs.StringVar(&o.file, "f", "", "config file (required)")
+	fs.Var(&o.files, "f", "config file, repeatable: -f base.toml -f work.toml (required)")
 	fs.Var(&o.types, "t", "filter by type: dotfile, repo (repeatable)")
 	fs.Var(&o.states, "s", "filter by state: ok, empty, blocked, src-missing (repeatable, supports !)")
 	fs.Var(&o.names, "n", "filter by name (repeatable)")

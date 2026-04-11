@@ -1,4 +1,4 @@
-module github.com/phil/dots
+module github.com/philshaughnes/dots
 
 go 1.26.1
 

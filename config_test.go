@@ -90,7 +90,7 @@ dest = "~/.config/nvim"
 			f.WriteString(tt.toml)
 			f.Close()
 
-			_, err = loadConfig(f.Name())
+			_, err = loadConfigs([]string{f.Name()})
 			if (err != nil) != tt.wantErr {
 				t.Errorf("loadConfig() error = %v, wantErr %v", err, tt.wantErr)
 			}
