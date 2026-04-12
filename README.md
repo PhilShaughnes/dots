@@ -64,21 +64,21 @@ dots apply -f machine.toml
 
 **Don't get in the way of git.** Git handles backup, sync, history, and diffing
 better than any dotfile tool will. So dots doesn't try. Your files are your
-files — symlinked to exactly where they belong so you can edit them in place,
+files: symlinked to exactly where they belong so you can edit them in place,
 see diffs, commit, and push without any extra steps. No templates to render, no
 build step, no editing-in-one-place and applying-somewhere-else. The moment
 there's indirection between you and your files, git stops working naturally.
 
 **Don't get in the way of shell.** Dots does one job: read a manifest, report
 state, apply it. It takes stdin, writes to stdout, and has straightforward flags
-and filters. The interesting workflows aren't built into dots — they're shell
-pipelines. Dots should compose cleanly with whatever you're already doing,
+and filters. The interesting workflows aren't built into dots, they're shell
+pipelines. Dots should compose cleanly with whatever you're already doing
 without hooks, magic, or a required TUI.
 
 **Know what and where, nothing more.** A manifest is just a readable list of
 what goes where, checkable against reality. Two primitives cover the space:
 symlinks for scattered files you want centralized in a repo, repos for projects
-big enough to be their own thing. Every path is fully explicit — no inferred
+big enough to be their own thing. Every path is fully explicit. No inferred
 paths, no directory structure conventions, no single dotfiles repo you're forced
 into. Because paths are explicit, machine differences are trivial: same file
 different location, different file same location, entirely different manifests
@@ -86,7 +86,7 @@ per machine.
 
 **Safe and idempotent.** Dots manages wiring, not content. It never overwrites,
 moves, or clobbers. If something's in the way, it tells you and waits. Safe to
-run repeatedly — it won't cause problems.
+run repeatedly, it won't cause problems.
 
 ---
 
