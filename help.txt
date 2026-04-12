@@ -1,17 +1,17 @@
-dots — declarative dotfile and repo manager
+dots — declare, track, and wire up files and repos
 
 ABOUT
 
-  Dots is a minimalist dotfile manager that is simple, orthogonal, and
-  composable.
+  Dots is a declarative manifest for your dotfiles and repos. It shows
+  you their state, applies what's missing safely, and exposes everything
+  as a queryable CLI so your other tools can do their thing.
 
   The two primitives are symlinks and repos. A dotfile entry creates a
   symlink from anywhere to anywhere. A repo entry clones a git repo to
   a specified location. That's it.
 
-  Configuration lives in a TOML file you put wherever you want. You can
-  have one file per machine, one shared file, or compose them however
-  makes sense — just point dots at whichever file applies.
+  Write a manifest, put it wherever you want. Use one per machine, one
+  shared, or compose them with multiple -f flags.
 
 
 CONFIG
@@ -26,11 +26,11 @@ CONFIG
   url  = "git@github.com:you/nvim.git"
   dest = "~/.config/nvim"
 
-  src and dest accept ~ and absolute paths. Names must be unique within
-  a config file. Run multiple config files to compose across machines:
+  src and dest accept ~ and absolute paths. Names must be unique across
+  all manifests used together. Compose with multiple -f flags:
 
-    dots list -f base.toml
-    dots list -f base.toml && dots list -f work.toml
+    dots list  -f base.toml -f work.toml -f projects.toml
+    dots apply -f base.toml -f coding.toml
 
 COMMANDS
 
@@ -39,7 +39,7 @@ COMMANDS
 
 FLAGS
 
-  -f file    config file (required)
+  -f file    manifest file, repeatable: -f base.toml -f work.toml (required)
   -t type    filter by type: dotfile, repo
   -s state   filter by state: ok, empty, blocked, src-missing
              supports negation: -s '!ok'
