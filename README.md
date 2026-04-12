@@ -94,8 +94,14 @@ run repeatedly, it won't cause problems.
 
 ```sh
 # Migrate existing dotfiles into your repo, then apply
-dots list -f machine.toml -t dotfile -s blocked -o src,dest | while IFS=$'\t' read -r src dest; do
+dots list -f machine.toml -t dotfile -s src-missing -o src,dest | while IFS=$'\t' read -r src dest; do
   mv "$dest" "$src"
+done
+dots apply -f machine.toml
+
+# Back up blocked dotfiles, then apply
+dots list -f machine.toml -t dotfile -s blocked -o dest | while read -r dest; do
+  mv "$dest" "$dest.bak"
 done
 dots apply -f machine.toml
 
