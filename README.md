@@ -1,3 +1,105 @@
+# Dots
+
+Ohi!
+
+Dots is a small CLI for declaring, querying, and applying your dotfiles.
+
+---
+
+## The idea
+
+You write a manifest describing your dotfiles.
+
+Dots:
+- shows you their state
+- applies what’s missing (safely)
+- lets you query everything from the CLI
+
+No discovery. No hidden conventions. Just what you declare.
+
+---
+
+## Why
+
+Dotfiles are scattered, personal, and constantly changing.
+
+Dots gives you:
+- a single place to describe them
+- visibility into what’s actually set up
+- a safe way to apply them
+- a CLI you can compose with shell tools
+
+---
+
+## Example
+
+```toml
+[[dotfiles]]
+name = "zshrc"
+src  = "~/dotfiles/.zshrc"
+dest = "~/.zshrc"
+
+[[repos]]
+name = "nvim"
+url  = "git@github.com:you/nvim.git"
+dest = "~/.config/nvim"
+````
+
+```sh
+dots list -f machine.toml
+dots apply -f machine.toml
+```
+
+---
+
+## States
+
+* `ok` — correct
+* `empty` — missing
+* `blocked` — conflict (never overwritten)
+* `src-missing` — source missing
+
+---
+
+## Composability
+
+The CLI is the interface:
+
+```sh
+dots list -f machine.toml -s blocked -o src,dest \
+| while read -r src dest; do
+  mv "$dest" "$src"
+done
+
+dots apply -f machine.toml
+```
+
+This isn’t a workaround, it’s the design.
+
+---
+
+## Principles
+
+* simple
+* declarative
+* composable
+* no magic
+* safe
+
+---
+
+## Install
+
+```sh
+go install github.com/philshaughnes/dots@latest
+```
+
+---
+
+Write down what your dotfiles should be.
+Dots helps you check and apply that.
+
+
 # Dots - The Simple Dotfile Manager
 
 Ohi! Welcome to Dots!  
