@@ -93,6 +93,10 @@ run repeatedly, it won't cause problems.
 ## Composability
 
 ```sh
+# Interactively add dotfiles to manifest
+find ~ -maxdepth 3 -name ".*" -type f | fzf --multi \
+  | dots add -f machine.toml -R ~/dotfiles
+
 # Migrate existing dotfiles into your repo, then apply
 dots list -f machine.toml -t dotfile -s src-missing -o src,dest | while IFS=$'\t' read -r src dest; do
   mv "$dest" "$src"
@@ -135,6 +139,7 @@ shell = orchestration
 ```
 dots list  -f file [flags]   show current state of all entries
 dots apply -f file [flags]   create symlinks and clone repos
+dots add   -f file [flags]   add an entry to a manifest
 dots help                    show full documentation
 ```
 
@@ -146,6 +151,16 @@ dots help                    show full documentation
 -s state   filter by state (supports !): -s empty, -s '!ok'
 -n name    filter by name
 -o fields  output fields: name,kind,state,src,url,dest
+```
+
+**Add flags** (`-f` required, all others optional):
+
+```
+-D dest    dest path (repeatable, or pipe via stdin)
+-S src     src path
+-R root    src root — mirrors dest path structure under root
+-N name    entry name (default: dest basename without extension)
+-U url     git remote URL (implies repo entry)
 ```
 
 Names piped to stdin are treated as a name filter, one per line.

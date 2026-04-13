@@ -69,6 +69,15 @@ func cmdAdd(args []string) int {
 	defer f.Close()
 
 	for _, dest := range dests {
+		entrySrc := src
+		if entrySrc == "" && root != "" {
+			entrySrc = mirrorPath(dest, root)
+		}
+		dest = normalizePath(dest)
+		if entrySrc == "" {
+			entrySrc = dest
+		}
+
 		entryName := name
 		if entryName == "" {
 			entryName = inferName(dest)
@@ -76,13 +85,6 @@ func cmdAdd(args []string) int {
 		if url != "" {
 			fmt.Fprintf(f, "\n[[repos]]\nname = \"%s\"\nurl  = \"%s\"\ndest = \"%s\"\n", entryName, url, dest)
 		} else {
-			entrySrc := src
-			if entrySrc == "" && root != "" {
-				entrySrc = mirrorPath(dest, root)
-			}
-			if entrySrc == "" {
-				entrySrc = dest
-			}
 			fmt.Fprintf(f, "\n[[dotfiles]]\nname = \"%s\"\nsrc  = \"%s\"\ndest = \"%s\"\n", entryName, entrySrc, dest)
 		}
 	}
@@ -104,20 +106,45 @@ func inferName(dest string) string {
 	return base
 }
 
-// mirrorPath derives a src path by mirroring dest's structure under root.
-// ~/.zshrc with root ~/dotfiles/ → ~/dotfiles/.zshrc
+// mirrorPath derives a src path by appending dest under root.
+// dest is used as-given: ~/  and absolute paths strip the home prefix;
+// relative paths are used directly, giving the caller control over depth.
+//   ~/.zshrc        + ~/dotfiles  → ~/dotfiles/.zshrc
+//   alacritty/a.toml + ~/dotfiles  → ~/dotfiles/alacritty/a.toml
 func mirrorPath(dest, root string) string {
 	var rel string
-	if strings.HasPrefix(dest, "~/") {
+	switch {
+	case strings.HasPrefix(dest, "~/"):
 		rel = dest[2:]
-	} else {
+	case strings.HasPrefix(dest, "/"):
 		home, err := os.UserHomeDir()
 		if err == nil {
-			rel = strings.TrimPrefix(expandPath(dest), home)
-			rel = strings.TrimPrefix(rel, "/")
+			rel = strings.TrimPrefix(dest, home+"/")
 		} else {
 			rel = filepath.Base(dest)
 		}
+	default:
+		rel = dest
 	}
 	return strings.TrimSuffix(root, "/") + "/" + rel
+}
+
+// normalizePath converts a relative path to an absolute one,
+// then converts paths under home to ~/… form for portability.
+func normalizePath(path string) string {
+	if strings.HasPrefix(path, "~/") || strings.HasPrefix(path, "/") {
+		return path
+	}
+	abs, err := filepath.Abs(path)
+	if err != nil {
+		return path
+	}
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return abs
+	}
+	if strings.HasPrefix(abs, home+"/") {
+		return "~/" + abs[len(home)+1:]
+	}
+	return abs
 }
