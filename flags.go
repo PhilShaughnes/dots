@@ -74,27 +74,13 @@ func stdinNames() []string {
 }
 
 // matchType returns true if the entry matches the type filter.
-// Multiple values are OR'd. Supports ! negation.
+// Multiple values are OR'd.
 func matchType(s entryStatus, types multiFlag) bool {
 	if len(types) == 0 {
 		return true
 	}
 	for _, t := range types {
-		neg := strings.HasPrefix(t, "!")
-		val := strings.TrimPrefix(t, "!")
-		var match bool
-		switch val {
-		case "dotfile":
-			match = s.kind == "dotfile"
-		case "repo":
-			match = s.kind == "repo"
-		default:
-			continue
-		}
-		if neg {
-			match = !match
-		}
-		if match {
+		if t == s.kind {
 			return true
 		}
 	}

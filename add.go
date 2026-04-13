@@ -4,20 +4,17 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 )
 
 func cmdAdd(args []string) int {
 	fs := flag.NewFlagSet("add", flag.ExitOnError)
-	var file, src, root, name, url string
-	var dests multiFlag
+	var file, root, kind string
 	fs.StringVar(&file, "f", "", "manifest file to add to (required)")
-	fs.Var(&dests, "D", "dest path (repeatable, or pipe via stdin)")
-	fs.StringVar(&src, "S", "", "src path (dotfile, single entry only)")
-	fs.StringVar(&root, "R", "", "src root — mirrors dest path structure under root")
-	fs.StringVar(&name, "N", "", "entry name (default: dest basename without extension)")
-	fs.StringVar(&url, "U", "", "git remote URL (repo, single entry only)")
+	fs.StringVar(&root, "r", "", "src root — dest path appended under root")
+	fs.StringVar(&kind, "t", "", "entry type: dotfile (default), repo")
 	fs.Usage = func() { printBrief() }
 	fs.Parse(args)
 
@@ -27,37 +24,12 @@ func cmdAdd(args []string) int {
 		return 1
 	}
 
+	dests := fs.Args()
 	if len(dests) == 0 {
-		for _, n := range stdinNames() {
-			dests = append(dests, n)
-		}
+		dests = stdinNames()
 	}
-
 	if len(dests) == 0 {
-		fmt.Fprintln(os.Stderr, "error: -D required (or pipe dest paths via stdin)")
-		return 1
-	}
-
-	multi := len(dests) > 1
-
-	if src != "" && root != "" {
-		fmt.Fprintln(os.Stderr, "error: -S and -R are mutually exclusive")
-		return 1
-	}
-	if url != "" && (src != "" || root != "") {
-		fmt.Fprintln(os.Stderr, "error: -U cannot be used with -S or -R")
-		return 1
-	}
-	if multi && src != "" {
-		fmt.Fprintln(os.Stderr, "error: -S requires a single -D")
-		return 1
-	}
-	if multi && name != "" {
-		fmt.Fprintln(os.Stderr, "error: -N requires a single -D")
-		return 1
-	}
-	if multi && url != "" {
-		fmt.Fprintln(os.Stderr, "error: -U requires a single -D")
+		fmt.Fprintln(os.Stderr, "error: dest path required (argument or stdin)")
 		return 1
 	}
 
@@ -69,27 +41,35 @@ func cmdAdd(args []string) int {
 	defer f.Close()
 
 	for _, dest := range dests {
-		entrySrc := src
-		if entrySrc == "" && root != "" {
+		entrySrc := root
+		if entrySrc != "" {
 			entrySrc = mirrorPath(dest, root)
 		}
 		dest = normalizePath(dest)
-		if entrySrc == "" {
-			entrySrc = dest
-		}
+		entryName := inferName(dest)
 
-		entryName := name
-		if entryName == "" {
-			entryName = inferName(dest)
-		}
-		if url != "" {
+		if kind == "repo" {
+			url := repoURL(dest)
 			fmt.Fprintf(f, "\n[[repos]]\nname = \"%s\"\nurl  = \"%s\"\ndest = \"%s\"\n", entryName, url, dest)
 		} else {
+			if entrySrc == "" {
+				entrySrc = dest
+			}
 			fmt.Fprintf(f, "\n[[dotfiles]]\nname = \"%s\"\nsrc  = \"%s\"\ndest = \"%s\"\n", entryName, entrySrc, dest)
 		}
 	}
 
 	return 0
+}
+
+// repoURL tries to read the origin remote URL from an existing repo at dest.
+// Falls back to a placeholder if the dest doesn't exist or has no remote.
+func repoURL(dest string) string {
+	out, err := exec.Command("git", "-C", expandPath(dest), "remote", "get-url", "origin").Output()
+	if err != nil {
+		return "<remote-url>"
+	}
+	return strings.TrimSpace(string(out))
 }
 
 // inferName derives an entry name from the dest path:
@@ -107,10 +87,11 @@ func inferName(dest string) string {
 }
 
 // mirrorPath derives a src path by appending dest under root.
-// dest is used as-given: ~/  and absolute paths strip the home prefix;
+// dest is used as-given: ~/ and absolute paths strip the home prefix;
 // relative paths are used directly, giving the caller control over depth.
-//   ~/.zshrc        + ~/dotfiles  → ~/dotfiles/.zshrc
-//   alacritty/a.toml + ~/dotfiles  → ~/dotfiles/alacritty/a.toml
+//
+//	~/.zshrc          + ~/dotfiles → ~/dotfiles/.zshrc
+//	alacritty/a.toml  + ~/dotfiles → ~/dotfiles/alacritty/a.toml
 func mirrorPath(dest, root string) string {
 	var rel string
 	switch {

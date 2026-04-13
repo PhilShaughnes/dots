@@ -18,8 +18,6 @@ func TestMatchType(t *testing.T) {
 		{"repo no match dotfile",      file, multiFlag{"repo"},     false},
 		{"dotfile matches dotfile",    file, multiFlag{"dotfile"},  true},
 		{"dotfile no match repo",      repo, multiFlag{"dotfile"},  false},
-		{"!repo matches dotfile",      file, multiFlag{"!repo"},    true},
-		{"!repo no match repo",        repo, multiFlag{"!repo"},    false},
 		{"multi OR: repo or dotfile",  file, multiFlag{"repo", "dotfile"}, true},
 		{"unknown type no match",      file, multiFlag{"unknown"},  false},
 	}
