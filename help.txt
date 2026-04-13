@@ -36,6 +36,19 @@ COMMANDS
 
   dots list  -f file [flags]   show current state of all entries
   dots apply -f file [flags]   create symlinks and clone repos
+  dots add   -f file [flags]   add an entry to a manifest
+
+ADD FLAGS
+
+  -D dest    dest path (repeatable, or pipe via stdin)
+  -S src     src path (dotfile, single entry only)
+  -R root    src root — mirrors dest path structure
+  -N name    entry name (default: dest basename without extension)
+  -U url     git remote URL (repo, single entry only)
+
+  Name defaults to dest basename without leading dot or extension.
+  Src defaults to dest if -S and -R are omitted.
+  -U implies a repo entry; otherwise dotfile.
 
 FLAGS
 

@@ -19,6 +19,8 @@ func main() {
 		os.Exit(cmdList(os.Args[2:]))
 	case "apply":
 		os.Exit(cmdApply(os.Args[2:]))
+	case "add":
+		os.Exit(cmdAdd(os.Args[2:]))
 	case "help":
 		fmt.Print(helpText)
 		os.Exit(0)
@@ -40,6 +42,7 @@ func printBrief() {
 	fmt.Println("commands:")
 	fmt.Println("  list    show current state of all entries")
 	fmt.Println("  apply   create symlinks and clone repos")
+	fmt.Println("  add     add an entry to a manifest")
 	fmt.Println("  help    show full documentation")
 	fmt.Println()
 	fmt.Println("flags:")
