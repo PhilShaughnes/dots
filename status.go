@@ -49,9 +49,7 @@ func cmdList(args []string) int {
 	fs.Parse(args)
 
 	if len(o.files) == 0 {
-		fmt.Fprintln(os.Stderr, "error: -f required")
-		fs.Usage()
-		return 1
+		o.files = defaultManifests()
 	}
 
 	cfg, err := loadConfigs(o.files)

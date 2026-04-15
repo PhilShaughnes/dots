@@ -13,15 +13,13 @@ func cmdAdd(args []string) int {
 	fs := flag.NewFlagSet("add", flag.ExitOnError)
 	var file, root, kind string
 	fs.StringVar(&file, "f", "", "manifest file to add to (required)")
-	fs.StringVar(&root, "r", "", "src root — dest path appended under root")
+	fs.StringVar(&root, "r", os.Getenv("DOTS_SRCROOT"), "src root — dest path appended under root")
 	fs.StringVar(&kind, "t", "", "entry type: dotfile (default), repo")
 	fs.Usage = func() { printBrief() }
 	fs.Parse(args)
 
 	if file == "" {
-		fmt.Fprintln(os.Stderr, "error: -f required")
-		fs.Usage()
-		return 1
+		file = resolveManifestPath("dots.toml")
 	}
 
 	dests := fs.Args()

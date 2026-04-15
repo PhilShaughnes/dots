@@ -30,7 +30,7 @@ func loadConfigs(paths []string) (*Config, error) {
 	var merged Config
 	for _, p := range paths {
 		var cfg Config
-		if _, err := toml.DecodeFile(expandPath(p), &cfg); err != nil {
+		if _, err := toml.DecodeFile(expandPath(resolveManifestPath(p)), &cfg); err != nil {
 			return nil, fmt.Errorf("%s: %w", p, err)
 		}
 		merged.Dotfiles = append(merged.Dotfiles, cfg.Dotfiles...)
@@ -74,4 +74,22 @@ func expandPath(path string) string {
 		return filepath.Join(home, path[2:])
 	}
 	return path
+}
+
+// resolveManifestPath resolves a manifest file path.
+// Relative paths are resolved against DOTS_ROOT if set, otherwise cwd.
+func resolveManifestPath(path string) string {
+	if strings.HasPrefix(path, "~/") || filepath.IsAbs(path) {
+		return path
+	}
+	if root := os.Getenv("DOTS_ROOT"); root != "" {
+		return filepath.Join(expandPath(root), path)
+	}
+	return path
+}
+
+// defaultManifests returns the default manifest paths when no -f is given.
+// Uses $DOTS_ROOT/dots.toml if DOTS_ROOT is set, otherwise dots.toml in cwd.
+func defaultManifests() []string {
+	return []string{resolveManifestPath("dots.toml")}
 }
