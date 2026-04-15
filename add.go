@@ -19,6 +19,11 @@ func cmdAdd(args []string) int {
 	fs.Parse(args)
 
 	if file == "" {
+		if os.Getenv("DOTS_ROOT") == "" {
+			fmt.Fprintln(os.Stderr, "error: -f required (or set DOTS_ROOT)")
+			fs.Usage()
+			return 1
+		}
 		file = resolveManifestPath("dots.toml")
 	}
 

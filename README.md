@@ -95,7 +95,7 @@ run repeatedly, it won't cause problems.
 ```sh
 # Interactively add dotfiles to manifest
 find ~ -maxdepth 3 -name ".*" -type f | fzf --multi \
-  | dots add -f machine.toml -R ~/dotfiles
+  | dots add -f machine.toml -r ~/dotfiles
 
 # Migrate existing dotfiles into your repo, then apply
 dots list -f machine.toml -t dotfile -s src-missing -o src,dest | while IFS=$'\t' read -r src dest; do
@@ -137,39 +137,48 @@ shell = orchestration
 ## Commands
 
 ```
-dots list  -f file [flags]   show current state of all entries
-dots apply -f file [flags]   create symlinks and clone repos
-dots add   -f file [flags]   add an entry to a manifest
+dots list  [flags]           show current state of all entries
+dots apply [flags]           create symlinks and clone repos
+dots add   [flags] [dests…]  add an entry to a manifest
 dots help                    show full documentation
 ```
 
-**Flags:**
+**Flags (list / apply):**
 
 ```
--f file    manifest file, repeatable
+-f file    manifest file, repeatable (default: dots.toml; DOTS_ROOT sets search path)
 -t type    filter by type: dotfile, repo
 -s state   filter by state (supports !): -s empty, -s '!ok'
 -n name    filter by name
 -o fields  output fields: name,kind,state,src,url,dest
 ```
 
-**Add flags** (`-f` required, all others optional):
-
-```
--D dest    dest path (repeatable, or pipe via stdin)
--S src     src path
--R root    src root — mirrors dest path structure under root
--N name    entry name (default: dest basename without extension)
--U url     git remote URL (implies repo entry)
-```
-
 Names piped to stdin are treated as a name filter, one per line.
+
+**Flags (add):**
+
+```
+-f file    manifest file, created if absent (-f or DOTS_ROOT required)
+-t repo    write a repo entry (default: dotfile)
+-r root    src root — dest path appended under root (default: DOTS_SRCROOT)
+```
+
+Dest paths are positional arguments or piped via stdin.
+For repo entries, the URL is read from the existing git remote at dest.
 
 **Composing manifests:**
 
 ```sh
 dots list  -f base.toml -f work.toml -f projects.toml
 dots apply -f base.toml -f coding.toml
+```
+
+## Environment
+
+```
+DOTS_ROOT      where manifest files live — resolves relative -f paths and
+               sets the default manifest for list/apply
+DOTS_SRCROOT   default src root for dots add (equivalent of -r)
 ```
 
 ---

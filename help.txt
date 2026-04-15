@@ -34,25 +34,31 @@ CONFIG
 
 COMMANDS
 
-  dots list  -f file [flags]   show current state of all entries
-  dots apply -f file [flags]   create symlinks and clone repos
-  dots add   -f file [flags]   add an entry to a manifest
+  dots list  [flags]           show current state of all entries
+  dots apply [flags]           create symlinks and clone repos
+  dots add   [flags] [dests…]  add an entry to a manifest
 
 ADD FLAGS
 
-  -D dest    dest path (repeatable, or pipe via stdin)
-  -S src     src path (dotfile, single entry only)
-  -R root    src root — mirrors dest path structure
-  -N name    entry name (default: dest basename without extension)
-  -U url     git remote URL (repo, single entry only)
+  -t repo    write a repo entry (default: dotfile)
+  -r root    src root — dest path appended under root
+             relative dests give partial structure:
+               cd ~/.config
+               dots add -r ~/dotfiles alacritty/alacritty.toml
+               → src ~/dotfiles/alacritty/alacritty.toml
 
+  Dest paths are arguments or piped via stdin.
   Name defaults to dest basename without leading dot or extension.
-  Src defaults to dest if -S and -R are omitted.
-  -U implies a repo entry; otherwise dotfile.
+  Src defaults to dest if -r is omitted.
+  For repo entries, the remote URL is read from the existing repo at dest.
+  If no remote is found, a placeholder is written for you to fill in.
+  The manifest file is created if it does not exist (-f or DOTS_ROOT required).
 
 FLAGS
 
-  -f file    manifest file, repeatable: -f base.toml -f work.toml (required)
+  -f file    manifest file, repeatable: -f base.toml -f work.toml
+             if omitted, uses dots.toml in current directory
+             relative paths resolve against DOTS_ROOT if set
   -t type    filter by type: dotfile, repo
   -s state   filter by state: ok, empty, blocked, src-missing
              supports negation: -s '!ok'
@@ -61,6 +67,12 @@ FLAGS
   -o fields  output fields, comma-separated
              available: name, kind, state, src, url, dest
              default:   name, kind, state, dest
+
+ENVIRONMENT
+
+  DOTS_ROOT      directory where manifest files live; resolves relative
+                 -f paths and sets the default manifest location
+  DOTS_SRCROOT   default src root for dots add (equivalent of -r)
 
 STATES
 
@@ -76,10 +88,11 @@ STATES
 
 STDIN
 
-  Names piped to stdin are used as a name filter, one per line.
-  This enables interactive selection:
+  Names piped to stdin are used as a name filter for list and apply.
+  Paths piped to stdin are used as dest arguments for add.
 
-    dots list -f m.toml -o name | fzf --multi | dots apply -f m.toml
+    dots list -o name | fzf --multi | dots apply
+    find ~ -maxdepth 3 -name ".*" -type f | fzf --multi | dots add
 
 EXAMPLES
 
@@ -97,6 +110,12 @@ EXAMPLES
 
   Interactively choose what to apply:
     dots list -f machine.toml -o name | fzf --multi | dots apply -f machine.toml
+
+  Add dotfiles using src root:
+    dots add -f machine.toml -r ~/dotfiles ~/.zshrc ~/.tmux.conf
+
+  Add an existing repo:
+    dots add -f machine.toml -t repo ~/.config/nvim
 
   Migrate existing dotfiles into your repo, then apply:
     dots list -f machine.toml -t dotfile -s src-missing -o src,dest \

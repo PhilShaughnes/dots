@@ -90,6 +90,14 @@ func resolveManifestPath(path string) string {
 
 // defaultManifests returns the default manifest paths when no -f is given.
 // Uses $DOTS_ROOT/dots.toml if DOTS_ROOT is set, otherwise dots.toml in cwd.
-func defaultManifests() []string {
-	return []string{resolveManifestPath("dots.toml")}
+func defaultManifests() ([]string, error) {
+	path := resolveManifestPath("dots.toml")
+	if _, err := os.Stat(expandPath(path)); os.IsNotExist(err) {
+		hint := "use -f or set DOTS_ROOT"
+		if os.Getenv("DOTS_ROOT") != "" {
+			hint = "use -f or check DOTS_ROOT"
+		}
+		return nil, fmt.Errorf("no manifest found (tried %s) — %s", path, hint)
+	}
+	return []string{path}, nil
 }

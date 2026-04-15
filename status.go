@@ -49,7 +49,12 @@ func cmdList(args []string) int {
 	fs.Parse(args)
 
 	if len(o.files) == 0 {
-		o.files = defaultManifests()
+		files, err := defaultManifests()
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "error:", err)
+			return 1
+		}
+		o.files = files
 	}
 
 	cfg, err := loadConfigs(o.files)
