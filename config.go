@@ -26,6 +26,25 @@ type RepoEntry struct {
 	Dest string `toml:"dest"`
 }
 
+// loadManifests resolves default manifests if needed and loads configs,
+// printing an error and returning false on failure.
+func loadManifests(o *opts) (*Config, bool) {
+	if len(o.files) == 0 {
+		files, err := defaultManifests()
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "error:", err)
+			return nil, false
+		}
+		o.files = files
+	}
+	cfg, err := loadConfigs(o.files)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error loading config: %v\n", err)
+		return nil, false
+	}
+	return cfg, true
+}
+
 func loadConfigs(paths []string) (*Config, error) {
 	var merged Config
 	for _, p := range paths {
@@ -93,11 +112,7 @@ func resolveManifestPath(path string) string {
 func defaultManifests() ([]string, error) {
 	path := resolveManifestPath("dots.toml")
 	if _, err := os.Stat(expandPath(path)); os.IsNotExist(err) {
-		hint := "use -f or set DOTS_ROOT"
-		if os.Getenv("DOTS_ROOT") != "" {
-			hint = "use -f or check DOTS_ROOT"
-		}
-		return nil, fmt.Errorf("no manifest found (tried %s) — %s", path, hint)
+		return nil, fmt.Errorf("no manifest found (tried %s) — use -f or set DOTS_ROOT", path)
 	}
 	return []string{path}, nil
 }

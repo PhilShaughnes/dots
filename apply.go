@@ -14,18 +14,8 @@ func cmdApply(args []string) int {
 	registerFlags(fs, &o)
 	fs.Parse(args)
 
-	if len(o.files) == 0 {
-		files, err := defaultManifests()
-		if err != nil {
-			fmt.Fprintln(os.Stderr, "error:", err)
-			return 1
-		}
-		o.files = files
-	}
-
-	cfg, err := loadConfigs(o.files)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "error loading config: %v\n", err)
+	cfg, ok := loadManifests(&o)
+	if !ok {
 		return 1
 	}
 

@@ -12,14 +12,14 @@ func TestMatchType(t *testing.T) {
 		types multiFlag
 		want  bool
 	}{
-		{"no filter matches dotfile",  file, nil,                   true},
-		{"no filter matches repo",     repo, nil,                   true},
-		{"repo matches repo",          repo, multiFlag{"repo"},     true},
-		{"repo no match dotfile",      file, multiFlag{"repo"},     false},
-		{"dotfile matches dotfile",    file, multiFlag{"dotfile"},  true},
-		{"dotfile no match repo",      repo, multiFlag{"dotfile"},  false},
-		{"multi OR: repo or dotfile",  file, multiFlag{"repo", "dotfile"}, true},
-		{"unknown type no match",      file, multiFlag{"unknown"},  false},
+		{"no filter matches dotfile", file, nil, true},
+		{"no filter matches repo", repo, nil, true},
+		{"repo matches repo", repo, multiFlag{"repo"}, true},
+		{"repo no match dotfile", file, multiFlag{"repo"}, false},
+		{"dotfile matches dotfile", file, multiFlag{"dotfile"}, true},
+		{"dotfile no match repo", repo, multiFlag{"dotfile"}, false},
+		{"multi OR: repo or dotfile", file, multiFlag{"repo", "dotfile"}, true},
+		{"unknown type no match", file, multiFlag{"unknown"}, false},
 	}
 
 	for _, tt := range tests {
@@ -38,21 +38,21 @@ func TestMatchState(t *testing.T) {
 		states multiFlag
 		want   bool
 	}{
-		{"no filter matches any",            stateOK,          nil,                          true},
-		{"ok matches ok",                    stateOK,          multiFlag{"ok"},              true},
-		{"ok* matches ok",                   stateChanged,     multiFlag{"ok"},              true},
-		{"ok no match empty",                stateEmpty,       multiFlag{"ok"},              false},
-		{"empty matches empty",              stateEmpty,       multiFlag{"empty"},           true},
-		{"blocked matches blocked",          stateBlocked,     multiFlag{"blocked"},         true},
-		{"src-missing matches src-missing",  stateSrcMissing,  multiFlag{"src-missing"},     true},
-		{"!ok excludes ok",                  stateOK,          multiFlag{"!ok"},             false},
-		{"!ok excludes ok*",                 stateChanged,     multiFlag{"!ok"},             false},
-		{"!ok includes empty",               stateEmpty,       multiFlag{"!ok"},             true},
-		{"!ok includes blocked",             stateBlocked,     multiFlag{"!ok"},             true},
-		{"multi OR: empty or blocked",       stateEmpty,       multiFlag{"empty", "blocked"}, true},
-		{"multi OR: no match ok",            stateOK,          multiFlag{"empty", "blocked"}, false},
-		{"negation excludes explicitly",     stateBlocked,     multiFlag{"!blocked"},        false},
-		{"negation includes others",         stateEmpty,       multiFlag{"!blocked"},        true},
+		{"no filter matches any", stateOK, nil, true},
+		{"ok matches ok", stateOK, multiFlag{"ok"}, true},
+		{"ok* matches ok", stateChanged, multiFlag{"ok"}, true},
+		{"ok no match empty", stateEmpty, multiFlag{"ok"}, false},
+		{"empty matches empty", stateEmpty, multiFlag{"empty"}, true},
+		{"blocked matches blocked", stateBlocked, multiFlag{"blocked"}, true},
+		{"src-missing matches src-missing", stateSrcMissing, multiFlag{"src-missing"}, true},
+		{"!ok excludes ok", stateOK, multiFlag{"!ok"}, false},
+		{"!ok excludes ok*", stateChanged, multiFlag{"!ok"}, false},
+		{"!ok includes empty", stateEmpty, multiFlag{"!ok"}, true},
+		{"!ok includes blocked", stateBlocked, multiFlag{"!ok"}, true},
+		{"multi OR: empty or blocked", stateEmpty, multiFlag{"empty", "blocked"}, true},
+		{"multi OR: no match ok", stateOK, multiFlag{"empty", "blocked"}, false},
+		{"negation excludes explicitly", stateBlocked, multiFlag{"!blocked"}, false},
+		{"negation includes others", stateEmpty, multiFlag{"!blocked"}, true},
 	}
 
 	for _, tt := range tests {

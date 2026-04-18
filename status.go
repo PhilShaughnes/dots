@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"os"
 	"path/filepath"
 )
@@ -10,11 +9,11 @@ import (
 type entryState int
 
 const (
-	stateOK        entryState = iota // symlink correct (dotfile) or repo present
-	stateChanged                     // just fixed by apply; displays as ok*
-	stateEmpty                       // nothing at dest
-	stateBlocked                     // dest exists but wrong; needs manual intervention
-	stateSrcMissing                  // src missing in dotfiles repo (dotfile only)
+	stateOK         entryState = iota // symlink correct (dotfile) or repo present
+	stateChanged                      // just fixed by apply; displays as ok*
+	stateEmpty                        // nothing at dest
+	stateBlocked                      // dest exists but wrong; needs manual intervention
+	stateSrcMissing                   // src missing in dotfiles repo (dotfile only)
 )
 
 func (s entryState) String() string {
@@ -48,18 +47,8 @@ func cmdList(args []string) int {
 	registerFlags(fs, &o)
 	fs.Parse(args)
 
-	if len(o.files) == 0 {
-		files, err := defaultManifests()
-		if err != nil {
-			fmt.Fprintln(os.Stderr, "error:", err)
-			return 1
-		}
-		o.files = files
-	}
-
-	cfg, err := loadConfigs(o.files)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "error loading config: %v\n", err)
+	cfg, ok := loadManifests(&o)
+	if !ok {
 		return 1
 	}
 
