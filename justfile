@@ -24,3 +24,7 @@ watch PATH:
 # watch and run a go file
 wtest PATH:
 	ls {{PATH}}/* | entr -c go test {{PATH}}/*.go
+
+# count without tests
+count:
+	tokei . --exclude '*_test.go'

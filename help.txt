@@ -49,6 +49,8 @@ ADD FLAGS
 
   Dest paths are arguments or piped via stdin.
   Name defaults to dest basename without leading dot or extension.
+  Names must be unique — generic filenames (config, init) may collide
+  and need manual editing in the manifest.
   Src defaults to dest if -r is omitted.
   For repo entries, the remote URL is read from the existing repo at dest.
   If no remote is found, a placeholder is written for you to fill in.

@@ -109,6 +109,13 @@ dots list -f machine.toml -t dotfile -s blocked -o dest | while read -r dest; do
 done
 dots apply -f machine.toml
 
+# Port the "shape" of one manifest onto a new root, for a new machine.
+# Reads name+url from the source manifest, writes fresh entries with a new dest root.
+dots list -f laptop.toml -t repo -o name,url | while IFS=$'\t' read -r name url; do
+  printf '[[repos]]\nname = "%s"\nurl  = "%s"\ndest = "/data/repos/personal/%s"\n\n' \
+    "$name" "$url" "$name"
+done >> devserver.toml
+
 # Interactively choose what to apply
 dots list -f machine.toml -o name | fzf --multi | dots apply -f machine.toml
 
