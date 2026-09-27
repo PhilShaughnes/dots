@@ -109,12 +109,11 @@ dots list -f machine.toml -t dotfile -s blocked -o dest | while read -r dest; do
 done
 dots apply -f machine.toml
 
-# Port the "shape" of one manifest onto a new root, for a new machine.
-# Reads name+url from the source manifest, writes fresh entries with a new dest root.
-dots list -f laptop.toml -t repo -o name,url | while IFS=$'\t' read -r name url; do
-  printf '[[repos]]\nname = "%s"\nurl  = "%s"\ndest = "/data/repos/personal/%s"\n\n' \
-    "$name" "$url" "$name"
-done >> devserver.toml
+# Port a manifest to a new machine (same shape, new dest prefix).
+# Repos clone on `apply`; dotfiles whose src isn't there yet report
+# src-missing and are skipped until their files exist.
+sed 's#~/code/personal/#/data/repos/personal/#' laptop.toml > devserver.toml
+dots apply -f devserver.toml
 
 # Interactively choose what to apply
 dots list -f machine.toml -o name | fzf --multi | dots apply -f machine.toml
