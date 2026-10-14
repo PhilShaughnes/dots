@@ -47,7 +47,7 @@ ADD FLAGS
                dots add -r ~/dotfiles alacritty/alacritty.toml
                → src ~/dotfiles/alacritty/alacritty.toml
 
-  Dest paths are arguments or piped via stdin.
+  Dest paths are arguments. A dest of - reads paths from stdin.
   Name defaults to dest basename without leading dot or extension.
   Names must be unique — generic filenames (config, init) may collide
   and need manual editing in the manifest.
@@ -65,7 +65,7 @@ FLAGS
   -s state   filter by state: ok, empty, blocked, src-missing
              supports negation: -s '!ok'
              repeatable:        -s empty -s blocked
-  -n name    filter by name (repeatable)
+  -n name    filter by name (repeatable, - reads names from stdin)
   -o fields  output fields, comma-separated
              available: name, kind, state, src, url, dest
              default:   name, kind, state, dest
@@ -90,11 +90,16 @@ STATES
 
 STDIN
 
-  Names piped to stdin are used as a name filter for list and apply.
-  Paths piped to stdin are used as dest arguments for add.
+  stdin is only read when asked for with -:
 
-    dots list -o name | fzf --multi | dots apply
-    find ~ -maxdepth 3 -name ".*" -type f | fzf --multi | dots add
+    -n -    list / apply read names from stdin, one per line
+    add -   add reads dest paths from stdin, one per line
+
+  With -, empty stdin selects nothing. Without it, stdin is never read,
+  so dots is safe inside while-read loops and with open pipes.
+
+    dots list -o name | fzf --multi | dots apply -n -
+    find ~ -maxdepth 3 -name ".*" -type f | fzf --multi | dots add -
 
 EXAMPLES
 
@@ -111,7 +116,7 @@ EXAMPLES
     dots list -f machine.toml -s blocked -o name,dest
 
   Interactively choose what to apply:
-    dots list -f machine.toml -o name | fzf --multi | dots apply -f machine.toml
+    dots list -f machine.toml -o name | fzf --multi | dots apply -f machine.toml -n -
 
   Add dotfiles using src root:
     dots add -f machine.toml -r ~/dotfiles ~/.zshrc ~/.tmux.conf

@@ -27,13 +27,21 @@ func cmdAdd(args []string) int {
 		file = resolveManifestPath("dots.toml")
 	}
 
-	dests := fs.Args()
-	if len(dests) == 0 {
-		dests = stdinNames()
+	if fs.NArg() == 0 {
+		fmt.Fprintln(os.Stderr, "error: dest path required (argument, or - to read stdin)")
+		return 1
+	}
+	// "-" reads dests from stdin; stdin is never read otherwise.
+	var dests []string
+	for _, arg := range fs.Args() {
+		if arg == "-" {
+			dests = append(dests, readLines(os.Stdin)...)
+			continue
+		}
+		dests = append(dests, arg)
 	}
 	if len(dests) == 0 {
-		fmt.Fprintln(os.Stderr, "error: dest path required (argument or stdin)")
-		return 1
+		return 0 // "-" with empty stdin: nothing to add
 	}
 
 	f, err := os.OpenFile(expandPath(file), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)

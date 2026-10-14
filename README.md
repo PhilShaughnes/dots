@@ -95,7 +95,7 @@ run repeatedly, it won't cause problems.
 ```sh
 # Interactively add dotfiles to manifest
 find ~ -maxdepth 3 -name ".*" -type f | fzf --multi \
-  | dots add -f machine.toml -r ~/dotfiles
+  | dots add -f machine.toml -r ~/dotfiles -
 
 # Migrate existing dotfiles into your repo, then apply
 dots list -f machine.toml -t dotfile -s src-missing -o src,dest | while IFS=$'\t' read -r src dest; do
@@ -116,7 +116,7 @@ sed 's#~/code/personal/#/data/repos/personal/#' laptop.toml > devserver.toml
 dots apply -f devserver.toml
 
 # Interactively choose what to apply
-dots list -f machine.toml -o name | fzf --multi | dots apply -f machine.toml
+dots list -f machine.toml -o name | fzf --multi | dots apply -f machine.toml -n -
 
 # Check all repos for uncommitted changes
 dots list -f machine.toml -t repo -o dest | while read -r repo; do
@@ -155,11 +155,12 @@ dots help                    show full documentation
 -f file    manifest file, repeatable (default: dots.toml; DOTS_ROOT sets search path)
 -t type    filter by type: dotfile, repo
 -s state   filter by state (supports !): -s empty, -s '!ok'
--n name    filter by name
+-n name    filter by name (- reads names from stdin)
 -o fields  output fields: name,kind,state,src,url,dest
 ```
 
-Names piped to stdin are treated as a name filter, one per line.
+stdin is only read when asked for: `-n -` reads names, one per line. With
+`-`, empty stdin selects nothing.
 
 **Flags (add):**
 
@@ -169,7 +170,7 @@ Names piped to stdin are treated as a name filter, one per line.
 -r root    src root — dest path appended under root (default: DOTS_SRCROOT)
 ```
 
-Dest paths are positional arguments or piped via stdin.
+Dest paths are positional arguments; `-` reads them from stdin, one per line.
 For repo entries, the URL is read from the existing git remote at dest.
 
 **Composing manifests:**

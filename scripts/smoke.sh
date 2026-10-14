@@ -59,4 +59,4 @@ echo "=== -s '!ok' ==="
 
 echo ""
 echo "=== pipe names to apply ==="
-"$DOTS" list -f "$DIR/machine.toml" -s empty -o name | "$DOTS" apply -f "$DIR/machine.toml" || true
+"$DOTS" list -f "$DIR/machine.toml" -s empty -o name | "$DOTS" apply -f "$DIR/machine.toml" -n - || true
