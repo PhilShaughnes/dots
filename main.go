@@ -49,7 +49,7 @@ func printBrief() {
 	fmt.Println("  -f file    manifest file, repeatable (default: dots.toml; DOTS_ROOT sets search path)")
 	fmt.Println("  -t type    filter by type: dotfile, repo (repeatable)")
 	fmt.Println("  -s state   filter by state: ok, empty, blocked, src-missing (repeatable, supports !)")
-	fmt.Println("  -n name    filter by name (repeatable)")
+	fmt.Println("  -n name    filter by name (repeatable, - reads names from stdin)")
 	fmt.Println("  -o fields  output fields: name,kind,state,src,url,dest (comma-separated)")
 	fmt.Println()
 	fmt.Println("flags (add):")

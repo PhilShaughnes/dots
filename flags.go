@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 )
@@ -36,41 +37,42 @@ func registerFlags(fs *flag.FlagSet, o *opts) {
 	fs.Var(&o.files, "f", "config file, repeatable: -f base.toml -f work.toml (required)")
 	fs.Var(&o.types, "t", "filter by type: dotfile, repo (repeatable)")
 	fs.Var(&o.states, "s", "filter by state: ok, empty, blocked, src-missing (repeatable, supports !)")
-	fs.Var(&o.names, "n", "filter by name (repeatable)")
+	fs.Var(&o.names, "n", "filter by name (repeatable, - reads names from stdin)")
 	fs.Var(&o.fields, "o", "output fields: name,kind,state,src,url,dest (comma-separated)")
 	fs.Usage = func() { printBrief() }
 }
 
-// collectNames merges -n flag values and stdin into a name set.
-// Returns nil if no names were specified (meaning: match all).
+// collectNames merges -n flag values into a name set. "-n -" reads names
+// from stdin; stdin is never read otherwise.
+// Returns nil if no -n was given (meaning: match all). A non-nil empty set
+// matches nothing, so an empty pipe into "-n -" selects no entries.
 func collectNames(flagNames multiFlag) map[string]bool {
+	if len(flagNames) == 0 {
+		return nil
+	}
 	names := map[string]bool{}
 	for _, n := range flagNames {
+		if n == "-" {
+			for _, line := range readLines(os.Stdin) {
+				names[line] = true
+			}
+			continue
+		}
 		names[n] = true
-	}
-	for _, n := range stdinNames() {
-		names[n] = true
-	}
-	if len(names) == 0 {
-		return nil
 	}
 	return names
 }
 
-// stdinNames reads names from stdin when it is a pipe, one per line.
-func stdinNames() []string {
-	info, err := os.Stdin.Stat()
-	if err != nil || info.Mode()&os.ModeCharDevice != 0 {
-		return nil
-	}
-	var names []string
-	scanner := bufio.NewScanner(os.Stdin)
+// readLines reads non-empty, trimmed lines from r.
+func readLines(r io.Reader) []string {
+	var lines []string
+	scanner := bufio.NewScanner(r)
 	for scanner.Scan() {
 		if line := strings.TrimSpace(scanner.Text()); line != "" {
-			names = append(names, line)
+			lines = append(lines, line)
 		}
 	}
-	return names
+	return lines
 }
 
 // matchType returns true if the entry matches the type filter.

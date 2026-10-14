@@ -69,7 +69,7 @@ func cmdList(args []string) int {
 func collectStatuses(cfg *Config, names map[string]bool) []entryStatus {
 	var out []entryStatus
 	for _, d := range cfg.Dotfiles {
-		if len(names) > 0 && !names[d.Name] {
+		if names != nil && !names[d.Name] {
 			continue
 		}
 		src := expandPath(d.Src)
@@ -83,7 +83,7 @@ func collectStatuses(cfg *Config, names map[string]bool) []entryStatus {
 		})
 	}
 	for _, r := range cfg.Repos {
-		if len(names) > 0 && !names[r.Name] {
+		if names != nil && !names[r.Name] {
 			continue
 		}
 		dest := expandPath(r.Dest)
