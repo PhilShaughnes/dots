@@ -99,6 +99,7 @@ find ~ -maxdepth 3 -name ".*" -type f | fzf --multi \
 
 # Migrate existing dotfiles into your repo, then apply
 dots list -f machine.toml -t dotfile -s src-missing -o src,dest | while IFS=$'\t' read -r src dest; do
+  mkdir -p "$(dirname "$src")"
   mv "$dest" "$src"
 done
 dots apply -f machine.toml
