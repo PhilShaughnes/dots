@@ -120,6 +120,35 @@ func TestCLIApplyEmptyStdinAppliesNothing(t *testing.T) {
 	}
 }
 
+// Usage on an error must go to stderr: a pipeline reading dots' stdout
+// would otherwise treat help text as data. Only an explicit -h prints it
+// to stdout.
+func TestCLIUsageStdout(t *testing.T) {
+	tests := []struct {
+		name       string
+		args       []string
+		wantStdout string // substring expected on stdout; "" means stdout must be empty
+	}{
+		{"no command", nil, ""},
+		{"bad list flag", []string{"list", "-f a.toml -f b.toml"}, ""},
+		{"bad apply flag", []string{"apply", "-x"}, ""},
+		{"bad add flag", []string{"add", "-x"}, ""},
+		{"add without -f or DOTS_ROOT", []string{"add", "~/.zshrc"}, ""},
+		{"-h prints usage", []string{"-h"}, "usage: dots"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := run(t, nil, tt.args...)
+			if tt.wantStdout == "" && got != "" {
+				t.Errorf("expected empty stdout, got %q", got)
+			}
+			if tt.wantStdout != "" && !strings.Contains(got, tt.wantStdout) {
+				t.Errorf("expected stdout to contain %q, got %q", tt.wantStdout, got)
+			}
+		})
+	}
+}
+
 func TestCLIAddStdin(t *testing.T) {
 	tests := []struct {
 		name  string

@@ -39,7 +39,7 @@ func registerFlags(fs *flag.FlagSet, o *opts) {
 	fs.Var(&o.states, "s", "filter by state: ok, empty, blocked, src-missing (repeatable, supports !)")
 	fs.Var(&o.names, "n", "filter by name (repeatable, - reads names from stdin)")
 	fs.Var(&o.fields, "o", "output fields: name,kind,state,src,url,dest (comma-separated)")
-	fs.Usage = func() { printBrief() }
+	fs.Usage = func() { printBrief(os.Stderr) }
 }
 
 // collectNames merges -n flag values into a name set. "-n -" reads names

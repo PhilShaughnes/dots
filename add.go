@@ -15,7 +15,7 @@ func cmdAdd(args []string) int {
 	fs.StringVar(&file, "f", "", "manifest file to add to (required)")
 	fs.StringVar(&root, "r", os.Getenv("DOTS_SRCROOT"), "src root — dest path appended under root")
 	fs.StringVar(&kind, "t", "", "entry type: dotfile (default), repo")
-	fs.Usage = func() { printBrief() }
+	fs.Usage = func() { printBrief(os.Stderr) }
 	fs.Parse(args)
 
 	if file == "" {

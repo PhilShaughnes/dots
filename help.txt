@@ -126,7 +126,7 @@ EXAMPLES
 
   Migrate existing dotfiles into your repo, then apply:
     dots list -f machine.toml -t dotfile -s src-missing -o src,dest \
-      | while IFS=$'\t' read -r src dest; do mv "$dest" "$src"; done
+      | while IFS=$'\t' read -r src dest; do mkdir -p "$(dirname "$src")"; mv "$dest" "$src"; done
     dots apply -f machine.toml
 
   Back up blocked dotfiles, then apply:
