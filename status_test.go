@@ -99,9 +99,17 @@ func TestRepoState(t *testing.T) {
 			want:  stateEmpty,
 		},
 		{
-			name: "blocked — dir exists but not a repo",
+			name: "empty — dir exists but is empty",
 			setup: func(dest string) {
 				os.MkdirAll(dest, 0755)
+			},
+			want: stateEmpty,
+		},
+		{
+			name: "blocked — dir has files but is not a repo",
+			setup: func(dest string) {
+				os.MkdirAll(dest, 0755)
+				os.WriteFile(filepath.Join(dest, "init.lua"), []byte("-- nvim"), 0644)
 			},
 			want: stateBlocked,
 		},

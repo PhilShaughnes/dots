@@ -51,7 +51,7 @@ dots apply -f machine.toml
 |---|---|
 | `ok` | symlink correct or repo present |
 | `ok*` | just applied |
-| `empty` | nothing at dest — safe to apply |
+| `empty` | nothing at dest (repos: or an empty dir) — safe to apply |
 | `blocked` | dest exists but conflicts — never overwritten |
 | `src-missing` | source path missing |
 

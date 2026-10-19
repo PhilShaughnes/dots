@@ -80,7 +80,7 @@ STATES
 
   ok          correct — symlink points to src, or repo is present
   ok*         just fixed by this apply run
-  empty       nothing at dest — safe to apply
+  empty       nothing at dest (repos: or an empty dir) — safe to apply
   blocked     dest exists but is wrong — needs manual intervention
               (could be a real file, wrong symlink, or non-repo dir)
   src-missing source path does not exist in your dotfiles repo
