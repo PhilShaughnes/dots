@@ -11,7 +11,7 @@ type entryState int
 const (
 	stateOK         entryState = iota // symlink correct (dotfile) or repo present
 	stateChanged                      // just fixed by apply; displays as ok*
-	stateEmpty                        // nothing at dest
+	stateEmpty                        // nothing at dest (repos: or an empty dir)
 	stateBlocked                      // dest exists but wrong; needs manual intervention
 	stateSrcMissing                   // src missing in dotfiles repo (dotfile only)
 )
@@ -137,6 +137,10 @@ func repoState(dest string) entryState {
 	}
 	if _, err := os.Stat(filepath.Join(dest, ".jj")); err == nil {
 		return stateOK
+	}
+	// an empty dir is safe to clone into (e.g. a pre-created btrfs subvolume)
+	if entries, err := os.ReadDir(dest); err == nil && len(entries) == 0 {
+		return stateEmpty
 	}
 	return stateBlocked
 }
