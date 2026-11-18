@@ -7,6 +7,8 @@ import (
 	"os"
 )
 
+var version = "dev"
+
 //go:embed help.txt
 var helpText string
 

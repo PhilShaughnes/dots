@@ -194,15 +194,11 @@ DOTS_SRCROOT   default src root for dots add (equivalent of -r)
 ## Install
 
 ```sh
+# mise (recommended)
+mise use -g github:PhilShaughnes/dots
+
+# go install
 go install github.com/philshaughnes/dots@latest
-```
-
-Or build from source:
-
-```sh
-git clone https://github.com/philshaughnes/dots
-cd dots
-go build -o dots .
 ```
 
 ---
