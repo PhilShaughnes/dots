@@ -213,3 +213,9 @@ management, or a fully managed system, this probably isn't the right tool.
 
 Write down what your dotfiles should be.  
 Dots helps you check and apply that. Have fun!
+
+---
+
+## Support
+
+If dots is useful to you, you can [support it on Ko-fi](https://ko-fi.com/philshaughnessy).
