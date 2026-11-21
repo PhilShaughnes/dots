@@ -44,3 +44,24 @@ release VERSION:
 	git tag -a "$tag" -m "$tag" "$main"
 	git push origin "$tag"
 	echo "tagged $tag - watch: gh run list --workflow release.yml"
+
+# release the next patch / minor / major version after the latest v* tag
+release-patch: (_bump "patch")
+release-minor: (_bump "minor")
+release-major: (_bump "major")
+
+_bump PART:
+	#!/usr/bin/env bash
+	set -euo pipefail
+	git fetch -q --tags origin
+	last=$(git tag -l "v*" --sort=-v:refname | head -1)
+	IFS=. read -r ma mi pa <<< "${last#v}"
+	ma=${ma:-0}; mi=${mi:-0}; pa=${pa:-0}
+	case "{{PART}}" in
+		major) ma=$((ma+1)); mi=0; pa=0 ;;
+		minor) mi=$((mi+1)); pa=0 ;;
+		patch) pa=$((pa+1)) ;;
+	esac
+	next="$ma.$mi.$pa"
+	echo "${last:-none} -> v$next"
+	{{just_executable()}} release "$next"
