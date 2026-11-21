@@ -37,6 +37,7 @@ COMMANDS
   dots list  [flags]           show current state of all entries
   dots apply [flags]           create symlinks and clone repos
   dots add   [flags] [dests…]  add an entry to a manifest
+  dots version                 print the version (also -v, --version)
 
 ADD FLAGS
 

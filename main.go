@@ -52,6 +52,7 @@ func printBrief(w io.Writer) {
 	fmt.Fprintln(w, "  apply   create symlinks and clone repos")
 	fmt.Fprintln(w, "  add     add an entry to a manifest")
 	fmt.Fprintln(w, "  help    show full documentation")
+	fmt.Fprintln(w, "  version print the version")
 	fmt.Fprintln(w)
 	fmt.Fprintln(w, "flags (list / apply):")
 	fmt.Fprintln(w, "  -f file    manifest file, repeatable (default: dots.toml; DOTS_ROOT sets search path)")
