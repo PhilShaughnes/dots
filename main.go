@@ -30,6 +30,9 @@ func main() {
 	case "-h", "--help":
 		printBrief(os.Stdout)
 		os.Exit(0)
+	case "version", "-v", "--version":
+		fmt.Println(version)
+		os.Exit(0)
 	default:
 		fmt.Fprintf(os.Stderr, "unknown command: %s\n", os.Args[1])
 		fmt.Fprintln(os.Stderr, "run 'dots help' for usage")
